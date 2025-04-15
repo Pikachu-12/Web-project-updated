@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Goal Categories</title>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Nunito', sans-serif;
+      background: linear-gradient(135deg, #ff9a9e, #fad0c4);
+      text-align: center;
+      padding: 40px;
+      color: #333;
+    }
+    .container {
+      max-width: 800px;
+      margin: auto;
+      background: white;
+      padding: 30px;
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    }
+    h1 {
+      font-size: 26px;
+      margin-bottom: 20px;
+    }
+    h2 {
+      font-size: 22px;
+      margin-top: 25px;
+      margin-bottom: 15px;
+    }
+    select, input, button {
+      width: 100%;
+      padding: 12px;
+      margin-top: 10px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+    select, input {
+      border: 1px solid #ddd;
+    }
+    button {
+      background: #ff758c;
+      color: white;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    button:hover {
+      background: #ff4f7a;
+    }
+    .goal-list {
+      margin-top: 20px;
+      text-align: left;
+    }
+    .goal-item {
+      background: #f8f8f8;
+      padding: 15px;
+      border-radius: 8px;
+      margin-top: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .goal-text {
+      flex-grow: 1;
+    }
+    .goal-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .progress-input {
+      width: 70px;
+      padding: 8px;
+      border-radius: 5px;
+      border: 1px solid #ddd;
+      text-align: center;
+    }
+    .update-btn {
+      padding: 8px 12px;
+      font-size: 14px;
+      background: #98d8c8;
+      color: #333;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .suggestions {
+      margin-top: 20px;
+      font-size: 14px;
+      color: #555;
+      padding: 15px;
+      background: #f9f9f9;
+      border-radius: 8px;
+    }
+    .section {
+      margin-top: 30px;
+      border-top: 1px solid #eee;
+      padding-top: 20px;
+    }
+    
+    /* Progress bar styles */
+    .progress-container {
+      margin-top: 30px;
+    }
+    .progress-item {
+      margin-bottom: 20px;
+      text-align: left;
+    }
+    .progress-info {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 5px;
+    }
+    .progress-label {
+      font-weight: bold;
+    }
+    .progress-value {
+      color: #ff758c;
+    }
+    .progress-bar-bg {
+      width: 100%;
+      background-color: #f0f0f0;
+      border-radius: 10px;
+      height: 20px;
+      overflow: hidden;
+    }
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #ff758c, #ff7eb3);
+      border-radius: 10px;
+      transition: width 0.5s ease-in-out;
+    }
+    .actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 30px;
+    }
+    .actions button {
+      flex: 1;
+    }
+    .delete-btn {
+      background: #ffaaaa;
+      color: #333;
+    }
+    .sort-btn {
+      background: #aaccff;
+      color: #333;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Set Your Goals</h1>
+    
+    <div>
+      <label for="goalType">Choose a Goal Category:</label>
+      <select id="goalType">
+        <option value="Academic">Academic</option>
+        <option value="Personal">Personal</option>
+        <option value="Long-Term">Long-Term</option>
+      </select>
+      <input type="text" id="goalInput" placeholder="Enter your goal...">
+      <button onclick="addGoal()">Add Goal</button>
+    </div>
+    
+    <div class="section">
+      <h2>Your Goals</h2>
+      <div class="goal-list" id="goalList">
+        <!-- Goals will be added here -->
+      </div>
+      <div class="suggestions" id="suggestions"></div>
+    </div>
+    
+    <div class="section">
+      <h2>Progress Tracker</h2>
+      <div class="progress-container" id="progressContainer">
+        <!-- Progress bars will be added here -->
+      </div>
+      
+      <div class="actions">
+        <button class="sort-btn" onclick="sortGoals()">Sort by Progress</button>
+        <button class="delete-btn" onclick="deleteCompleted()">Delete Completed</button>
+      </div>
+    </div>
+  </div>
+   
+  <script>
+    let goals = [];
+    let sortDirection = 'asc'; // For toggling sort direction
+   
+    function addGoal() {
+      let type = document.getElementById("goalType").value;
+      let goalText = document.getElementById("goalInput").value;
+      
+      if (goalText.trim() === "") {
+        alert("Please enter a goal!");
+        return;
+      }
+      
+      // Add the new goal to the list with initial progress of 0%
+      goals.push({ 
+        id: Date.now(), // Unique ID for each goal
+        type, 
+        goalText, 
+        progress: 0 
+      });
+      
+      document.getElementById("goalInput").value = "";
+      
+      // Update the display
+      renderGoals();
+      updateProgressBars();
+      suggestGoal(type);
+    }
+    
+    function renderGoals() {
+      let goalList = document.getElementById("goalList");
+      goalList.innerHTML = ""; // Clear current list
+      
+      if (goals.length === 0) {
+        goalList.innerHTML = "<p>No goals added yet. Add your first goal above!</p>";
+        return;
+      }
+      
+      goals.forEach((goal) => {
+        let goalItem = document.createElement("div");
+        goalItem.classList.add("goal-item");
+        
+        goalItem.innerHTML = `
+          <div class="goal-text">
+            <strong>${goal.type}:</strong> ${goal.goalText}
+          </div>
+          <div class="goal-controls">
+            <input type="number" class="progress-input" id="progress-${goal.id}" 
+              value="${goal.progress}" min="0" max="100" 
+              placeholder="0-100%">
+            <button class="update-btn" onclick="updateProgress(${goal.id})">Update</button>
+          </div>
+        `;
+        
+        goalList.appendChild(goalItem);
+      });
+    }
+    
+    function updateProgress(goalId) {
+      // Find the goal with this ID
+      let goalIndex = goals.findIndex(g => g.id === goalId);
+      if (goalIndex === -1) return;
+      
+      // Get the new progress value
+      let progressInput = document.getElementById(`progress-${goalId}`);
+      let newProgress = parseInt(progressInput.value);
+      
+      // Validate input is between 0-100
+      if (isNaN(newProgress) || newProgress < 0 || newProgress > 100) {
+        alert("Please enter a valid progress percentage between 0 and 100");
+        progressInput.value = goals[goalIndex].progress;
+        return;
+      }
+      
+      // Update the goal's progress
+      goals[goalIndex].progress = newProgress;
+      
+      // Update the progress bars
+      updateProgressBars();
+    }
+   
+    function updateProgressBars() {
+      let progressContainer = document.getElementById("progressContainer");
+      progressContainer.innerHTML = ""; // Clear current progress bars
+      
+      if (goals.length === 0) {
+        progressContainer.innerHTML = "<p>Add goals to track your progress!</p>";
+        return;
+      }
+      
+      goals.forEach((goal) => {
+        let progressItem = document.createElement("div");
+        progressItem.classList.add("progress-item");
+        
+        progressItem.innerHTML = `
+          <div class="progress-info">
+            <span class="progress-label">${goal.goalText}</span>
+            <span class="progress-value">${goal.progress}%</span>
+          </div>
+          <div class="progress-bar-bg">
+            <div class="progress-bar" style="width: ${goal.progress}%"></div>
+          </div>
+        `;
+        
+        progressContainer.appendChild(progressItem);
+      });
+    }
+   
+    function suggestGoal(type) {
+      let suggestions = {
+        "Academic": ["Study for 2 hours daily", "Complete all assignments before deadlines", "Read one new book every month"],
+        "Personal": ["Exercise for 30 minutes daily", "Practice mindfulness for 10 minutes", "Learn a new skill each month"],
+        "Long-Term": ["Save money for future investments", "Build a strong professional network", "Plan for higher education abroad"]
+      };
+      
+      let suggestionText = `<strong>Suggestions for ${type} goals:</strong> ` + suggestions[type].join(", ");
+      document.getElementById("suggestions").innerHTML = suggestionText;
+    }
+    
+    function sortGoals() {
+      if (sortDirection === 'asc') {
+        // Sort ascending (low to high)
+        goals.sort((a, b) => a.progress - b.progress);
+        sortDirection = 'desc';
+      } else {
+        // Sort descending (high to low)
+        goals.sort((a, b) => b.progress - a.progress);
+        sortDirection = 'asc';
+      }
+      
+      // Update displays
+      renderGoals();
+      updateProgressBars();
+    }
+    
+    function deleteCompleted() {
+      // Keep only goals that are not 100% complete
+      const initialCount = goals.length;
+      goals = goals.filter(goal => goal.progress < 100);
+      
+      const removedCount = initialCount - goals.length;
+      if (removedCount > 0) {
+        alert(`Removed ${removedCount} completed goal${removedCount > 1 ? 's' : ''}.`);
+      } else {
+        alert("No completed goals to remove.");
+      }
+      
+      // Update displays
+      renderGoals();
+      updateProgressBars();
+    }
+    
+    // Initialize the app
+    window.onload = function() {
+      renderGoals();
+      updateProgressBars();
+    };
+  </script>
+</body>
+</html>
